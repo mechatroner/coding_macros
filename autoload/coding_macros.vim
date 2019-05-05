@@ -292,25 +292,27 @@ function! s:FormatVarsOutCpp(fields, indent, stream_token)
     return expanded
 endfunction
 
+
 function! s:FormatVarsOutPython(fields, indent, stream_token)
     let resout = ""
     let i = 0
     for field in a:fields
         if (i > 0)
             if (field[0] == '"' && field[len(field) - 1] == '"')
-                let resout = resout . printf(', %s', field)
+                let resout = resout . printf(', ",\t" + %s', field)
             else
-                let resout = resout . printf(', "\t%s:", %s', field, field)
+                let resout = resout . printf(', ",\t%s:", str(%s)', field, field)
             endif
         else
             if (field[0] == '"' && field[len(field) - 1] == '"')
                 let resout = resout . printf(' %s', field)
             else
-                let resout = resout . printf(' "%s:", %s', field, field)
+                let resout = resout . printf(' "%s:", str(%s)', field, field)
             endif
         endif
         let i = i + 1
     endfor
+    let resout = "''.join([" . resout . "])"
     let stkns = <SID>SelectPythonOutput(a:stream_token)
     let expanded = printf('%sprint(%s%s) #FOR_DEBUG', a:indent, resout, stkns)
     return expanded
@@ -506,6 +508,7 @@ endfunction
 function! coding_macros#expand_hash_macro()
     let lineno = line(".")
     let line = getline(".")
+    " TODO use double-quote aware split
     let fields = split(line)
     let indent = split(line, '@', 1)[0]
     let aftercol = 100000
